@@ -16,7 +16,6 @@ public static class EdgeDetect
     static int stepSec = 1;
     static float rayLen = 16;
     static float angleStep = Mathf.PI / 6;
-    //static int angleBin = 2;
 
     static bool errorFrameSaved = false;
 
@@ -100,72 +99,7 @@ public static class EdgeDetect
         }
         return currentChainStart;
     }
-
-    static EdgeChain SearchChainRecursive(EdgeChain chainStart)
-    {
-        RemoveTurningPoints(chainStart.pos, rayLen * 1.5f);
-        EdgeChain chainToMerge = null;
-        float L2 = rayLen * rayLen;
-        //成环
-        if (chainStart.Last && chainStart.next && chainStart.next.next && (chainStart.Last.pos - chainStart.pos).sqrMagnitude < L2)
-        {
-            return chainStart;
-        }
-        //合并
-        foreach (var chain in chains)
-        {
-            if((chain.Last.pos - chainStart.pos).sqrMagnitude  <= L2)
-            {
-                chainToMerge = chain;
-                break;
-            }
-        }
-        if (chainToMerge)
-        {
-            var chainEnd = chainToMerge.Last;
-            chainEnd.next = chainStart;
-            chainStart.previous = chainEnd;
-            return null;
-        }
-
-        //搜索
-        Vector2 prevPos;
-        if (SearchPrevious(chainStart, out prevPos))
-        {
-            var newNode = new EdgeChain(prevPos);
-            newNode.next = chainStart;
-            chainStart.previous = newNode;
-            return SearchChain(newNode);
-        }
-        return chainStart;
-    }
-
-    //static bool SearchPrevious(EdgeChain chainStart, out Vector2 res)
-    //{
-    //    float startAngle = 0;
-    //    if (chainStart.next)
-    //    {
-    //        var d = chainStart.next.pos - chainStart.pos;
-    //        startAngle = Mathf.Atan2(d.y, d.x);
-    //    }
-    //    float endAngle = startAngle + Mathf.PI * 2;
-    //    Vector2 prevPos = chainStart.pos + new Vector2(Mathf.Cos(startAngle), Mathf.Sin(startAngle)) * rayLen;
-    //    int prevSample = BilinearSample(prevPos);
-    //    for (float angle = startAngle; angle <= endAngle; angle += angleStep)
-    //    {
-    //        Vector2 curPos = chainStart.pos + new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * rayLen;
-    //        int curSample = BilinearSample(curPos);
-    //        if (curSample == 1 && prevSample == 0 && !searchedMask[Mathf.FloorToInt(curPos.x), Mathf.FloorToInt(curPos.y)])
-    //        {
-    //            res = curPos;
-    //            return true;
-    //        }
-    //        prevPos = curPos;
-    //        prevSample = curSample;
-    //    }
-    //    res = Vector2.zero;
-    //    return false;
-    //}
+    
     static bool SearchPrevious(EdgeChain chainStart, out Vector2 res)
     {
         float prevAngle = 0;
@@ -274,6 +208,7 @@ public static class EdgeDetect
     {
         turningPoints.Clear();
         turningPointsTable = new TurningPoint[image.width, image.height];
+        //从画面四个边缘找
         int prevPoint = -1;
         for (int x = 0; x < image.width; x += stepSec)
         {
@@ -314,6 +249,7 @@ public static class EdgeDetect
             }
             prevPoint = curPoint;
         }
+        //画面内部，竖向
         for (int x = stepPri; x < image.width; x += stepPri)
         {
             prevPoint = -1;
@@ -327,6 +263,7 @@ public static class EdgeDetect
                 prevPoint = curPoint;
             }
         }
+        //画面内部，横向
         for (int y = stepPri; y < image.height; y += stepPri)
         {
             prevPoint = -1;
@@ -360,7 +297,7 @@ public static class EdgeDetect
         var col = image.GetPixelBilinear(pos.x / image.width, pos.y / image.height).g;
         return col > 0.5 ? 1 : 0;
     }
-    static int SafeSample(Vector2 pos)
+    static int SafeSampleDiscrete(Vector2 pos)
     {
         int xi = Mathf.RoundToInt(pos.x);
         int yi = Mathf.RoundToInt(pos.y);
@@ -386,7 +323,7 @@ public class TurningPoint
     }
 }
 
-//可以拼接 不可以中间插入
+//双向索引链式结构 可以拼接 不可以中间插入
 public class EdgeChain
 {
     public EdgeChain next = null;
