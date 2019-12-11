@@ -17,89 +17,19 @@ public class SerialUtil : MonoBehaviour
     public int scale = 40;
 
     public List<LaserNode> dataToSend;
-    bool waiting = false;
+    //bool waiting = false;
 
     private void Init()
     {
         port = new SerialPort("COM8", 115200);
         port.RtsEnable = true;
-        //port.WriteBufferSize = 16384;
-        //port.ReadBufferSize = 16384;
         port.Open();
         Debug.Log(port);
-        //port.DataReceived += DataReceived;
-        //Log("initialized");
-
-        //port.Write("1");
     }
-
-    void WriteData()
-    {
-        int count = 0;
-        List<byte> bytes = new List<byte>();
-        foreach (var node in dataToSend)
-        {
-            count++;
-            byte[] bts = node.ToBytes(scale);
-            foreach(var bt in bts)
-            {
-                bytes.Add(bt);
-            }
-            if (count >= 1000) break;
-        }
-        byte[] btw = bytes.ToArray();
-        port.Write(btw, 0, btw.Length);
-
-        var s = "";
-        for(int i = 0; i < 100; i++)
-        {
-            s += btw[i] + " ";
-        }
-        Debug.LogWarning(s);
-        Debug.LogWarning("wrote" + btw.Length);
-    }
-
     int seg = 255;
     int maxSegCount = 4;
     int segWaitTime = 8;
-    void WriteDataAsync()
-    {
-        StartCoroutine(WriteDataAsyncEnum());
-    }
-
-    IEnumerator WriteDataAsyncEnum()
-    {
-        int count = 0;
-        List<byte> bytes = new List<byte>();
-        foreach (var node in dataToSend)
-        {
-            byte[] bts = node.ToBytes(scale);
-            foreach (var bt in bts)
-            {
-                count++;
-                bytes.Add(bt);
-            }
-            if (count >= seg * maxSegCount)
-            {
-                Debug.LogWarning("break");
-                break;
-            }
-        }
-        byte[] btw = bytes.ToArray();
-        for (int offset = 0; offset < btw.Length; offset += seg)
-        {
-            yield return new WaitForSeconds(0);
-            port.Write(btw, offset, Mathf.Min(btw.Length - offset, seg));
-        }
-        port.Write(new byte[] { 255 }, 0, 1);
-        Debug.LogWarning("AsyncWrote" + btw.Length);
-        count_sent++;
-        dbgText.text = count_sent.ToString();
-        waiting = true;
-        yield return 0;
-        //port.Write(btw, 0, btw.Length);
-    }
-
+    
     void WriteDataSync()
     {
         if (dataToSend == null)
@@ -201,22 +131,21 @@ public class SerialUtil : MonoBehaviour
     int count_sent = 0;
     void Update()
     {
-        Debug.Log("Bytes:" + port.BytesToRead);
+        //Debug.Log("Bytes:" + port.BytesToRead);
         if (port.BytesToRead != 0)
         {
             //count_rec++;
             byte response = (byte)port.ReadByte();
-            if (response == 255)
-            {
-                waiting = false;
-            }
+            //if (response == 255)
+            //{
+            //    waiting = false;
+            //}
             Debug.LogWarning("response:" + response);
         }
 
         if (Input.GetKeyDown(KeyCode.S))
         {
             WriteDataSync();
-            //SendNext();
         }
         if (Input.GetKeyDown(KeyCode.D))
         {
@@ -227,26 +156,8 @@ public class SerialUtil : MonoBehaviour
             port.Write(new byte[] { 255 }, 0, 1);
         }
         WriteDataSync();
-        //TrySendNext();
     }
 
-    private void TrySendNext()
-    {
-        if (!waiting && dataToSend != null)
-        {
-            WriteDataAsync();
-        }
-    }
-
-    private void SendNext()
-    {
-        WriteData();
-        port.Write(new byte[] { 255 }, 0, 1);
-        count_sent++;
-        dbgText.text = count_sent.ToString();
-        waiting = true;
-        Debug.LogWarning("sending");
-    }
     private void SendSingle()
     {
         byte[] bts = new LaserNode(posToSend, 1, 1).ToBytes(scale);
@@ -257,7 +168,7 @@ public class SerialUtil : MonoBehaviour
         byte[] testData = new byte[] { 0x01, 0x00, 0x00, 0x00, 0xfe, 0x00, 0x00, 0x01, 0x00, 0xfe };
         port.Write(testData, 0, testData.Length);
         port.Write(new byte[] { 255 }, 0, 1);
-        waiting = true;
+        //waiting = true;
         Debug.LogWarning("sending");
     }
 }
