@@ -4,6 +4,8 @@ using UnityEngine;
 
 public static class LaserPath
 {
+    public static Color color = Color.cyan;
+
     //贪心 把多个路径连成一个
     public static List<LaserNode> ConvertEdge(List<EdgeChain> chains)
     {
@@ -15,16 +17,16 @@ public static class LaserPath
             var chain = NearestChain(chains, currentPos);
             chains.Remove(chain);
             laserNodes.Add(new LaserNode(chain.pos, 0, 0));
-            laserNodes.Add(new LaserNode(chain.pos, 1, 0));
+            laserNodes.Add(new LaserNode(chain.pos, color, 0));
             while (chain.next)
             {
                 chain = chain.next;
-                laserNodes.Add(new LaserNode(chain.pos, 1, 1));
+                laserNodes.Add(new LaserNode(chain.pos, color, 1));
             }
             laserNodes.Add(new LaserNode(chain.pos, 0, 0));
             currentPos = chain.pos;
         }
-        Debug.Log("NodeCount:" + laserNodes.Count);
+        //Debug.Log("NodeCount:" + laserNodes.Count);
         return laserNodes;
     }
 

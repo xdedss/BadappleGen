@@ -45,6 +45,7 @@ public class Test : MonoBehaviour
             //Debug.Log(EdgeDetect.chains[chainIndex].IndexToLast);
 
             //var path = LaserPath.ConvertEdge(EdgeDetect.chains);
+            LaserPath.color = Color.HSVToRGB(Mathf.Clamp((EdgeDetect.brightness - 0.5f) * 2 + 1/3f, 1/6f, 1/2f), 1, 1);// Color.Lerp(Color.red, Color.cyan, EdgeDetect.brightness);
             var path = LaserPath.ConvertEdge(new List<EdgeChain>(EdgeDetect.chains));
             //path = LaserPath.OptimizePath(path, 16);
             DrawLaserPath(path);
@@ -117,7 +118,7 @@ public class Test : MonoBehaviour
     void DrawLaserPath(List<LaserNode> path)
     {
         LaserNode last = null;
-        bool flip = true;
+        //bool flip = true;
         foreach(var node in path)
         {
             if(last != null)
@@ -125,7 +126,9 @@ public class Test : MonoBehaviour
                 //flip ^= true;
                 //float intensity = (last.intensity + node.intensity) / 4 + 0.5f;
                 //Debug.DrawLine(last.pos.V3(0), node.pos.V3(0), new Color(flip?0:1, 1, 0, intensity));
-                Debug.DrawLine(last.pos.V3(0), node.pos.V3(0), last.color);
+                var col = last.color;
+                col.a = Mathf.Clamp01(col.r + col.g + col.b) * 0.7f + 0.3f;
+                Debug.DrawLine(last.pos.V3(0), node.pos.V3(0), col);
             }
             last = node;
         }

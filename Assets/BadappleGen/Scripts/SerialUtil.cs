@@ -154,7 +154,7 @@ public class SerialUtil : MonoBehaviour
         }
         if (Input.GetKeyDown(KeyCode.E))
         {
-            port.Write(new byte[] { 255 }, 0, 1);
+            SendEnd();
         }
         if (autoSend)
         {
@@ -162,17 +162,21 @@ public class SerialUtil : MonoBehaviour
         }
     }
 
-    private void SendSingle()
+    public void SendSingle()
     {
         byte[] bts = new LaserNode(posToSend, 1, 1).ToBytes(scale);
         port.Write(bts, 0, bts.Length);
     }
-    private void SendTest()
+    public void SendTest()
     {
         byte[] testData = new byte[] { 0x01, 0x00, 0x00, 0x00, 0xfe, 0x00, 0x00, 0x01, 0x00, 0xfe };
         port.Write(testData, 0, testData.Length);
         port.Write(new byte[] { 255 }, 0, 1);
         //waiting = true;
         Debug.LogWarning("sending");
+    }
+    public void SendEnd()
+    {
+        port.Write(new byte[] { 255 }, 0, 1);
     }
 }

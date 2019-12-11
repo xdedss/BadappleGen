@@ -6,6 +6,7 @@ public static class EdgeDetect
 {
 
     public static List<EdgeChain> chains = new List<EdgeChain>();
+    public static float brightness;
     public static Texture2D image;
 
     static List<TurningPoint> turningPoints = new List<TurningPoint>();
@@ -206,6 +207,8 @@ public static class EdgeDetect
 
     static void FindTurningPoints()
     {
+        int totalSample = 0;
+        int brightSample = 0;
         turningPoints.Clear();
         turningPointsTable = new TurningPoint[image.width, image.height];
         //从画面四个边缘找
@@ -256,6 +259,8 @@ public static class EdgeDetect
             for (int y = 0; y < image.height; y += stepSec)
             {
                 int curPoint = SafeSample(x, y);
+                totalSample++;
+                if (curPoint == 1) brightSample++;
                 if(prevPoint != curPoint && prevPoint != -1)
                 {
                     AddTurningPoint(x, y);
@@ -270,6 +275,8 @@ public static class EdgeDetect
             for (int x = 0; x < image.width; x += stepSec)
             {
                 int curPoint = SafeSample(x, y);
+                totalSample++;
+                if (curPoint == 1) brightSample++;
                 if (prevPoint != curPoint && prevPoint != -1)
                 {
                     AddTurningPoint(x, y);
@@ -277,6 +284,8 @@ public static class EdgeDetect
                 prevPoint = curPoint;
             }
         }
+        brightness = ((float)brightSample) / totalSample;
+        Debug.Log(brightness);
     }
 
     static bool InBound(int x, int y)
