@@ -76,7 +76,10 @@ public class LaserNode
         int yi = Mathf.RoundToInt(-pos.y * scale) + 32512;
         if (yi > 65024) yi = 65024;
         if (yi < 0) yi = 0;
-        int intensityi = Mathf.RoundToInt(intensity * 254);
+        int ri = Mathf.RoundToInt(color.r * 3);
+        int gi = Mathf.RoundToInt(color.g * 3);
+        int bi = Mathf.RoundToInt(color.b * 3);
+        int intensityi = (ri << 6) + (gi << 4) + (bi << 2);
         res[0] = (byte)(xi / 255);
         res[1] = (byte)(xi % 255);
         res[2] = (byte)(yi / 255);

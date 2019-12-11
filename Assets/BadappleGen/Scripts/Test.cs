@@ -122,9 +122,10 @@ public class Test : MonoBehaviour
         {
             if(last != null)
             {
-                flip ^= true;
-                float intensity = (last.intensity + node.intensity) / 4 + 0.5f;
-                Debug.DrawLine(last.pos.V3(0), node.pos.V3(0), new Color(flip?0:1, 1, 0, intensity));
+                //flip ^= true;
+                //float intensity = (last.intensity + node.intensity) / 4 + 0.5f;
+                //Debug.DrawLine(last.pos.V3(0), node.pos.V3(0), new Color(flip?0:1, 1, 0, intensity));
+                Debug.DrawLine(last.pos.V3(0), node.pos.V3(0), last.color);
             }
             last = node;
         }
