@@ -59,4 +59,22 @@ public class LaserNode
         this.intensity = intensity;
         this.deltaTime = deltaTime;
     }
+
+    public byte[] ToBytes(float scale)
+    {
+        byte[] res = new byte[5];
+        int xi = Mathf.RoundToInt(pos.x * scale) + 32512;
+        if (xi > 65024) xi = 65024;
+        if (xi < 0) xi = 0;
+        int yi = Mathf.RoundToInt(-pos.y * scale) + 32512;
+        if (yi > 65024) yi = 65024;
+        if (yi < 0) yi = 0;
+        int intensityi = Mathf.RoundToInt(intensity * 254);
+        res[0] = (byte)(xi / 255);
+        res[1] = (byte)(xi % 255);
+        res[2] = (byte)(yi / 255);
+        res[3] = (byte)(yi % 255);
+        res[4] = (byte)intensityi;
+        return res;
+    }
 }

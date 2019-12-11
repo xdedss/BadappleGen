@@ -1,0 +1,255 @@
+
+
+// 本实验测试3路激光器的好坏，用三路PWM完成
+
+// DaYu-MCU-250本身连接
+#define PIN_LED4 13
+#define PIN_SW2  1
+#define PIN_SW3  17
+
+// ADC连接定义
+#define PIN_AD_RST 13
+#define PIN_SPI_CS 14
+#define PIN_SPI_SCK 7
+#define PIN_SPI_SDO 12
+#define PIN_SPI_SDI 0
+
+// 三路激光器（OC）输出
+#define PIN_OC1 9   // RED
+#define PIN_OC2 10  // GREEN
+#define PIN_OC3 11  // BLUE
+
+// EEPROM (I2C) 连接
+#define PIN_SCL1 2
+#define PIN_SDA1 3
+
+signed int cur_x, cur_y;
+byte cur_int;//亮度
+
+// ADC 使用的数据结构
+union T_ad5761x_REG
+{
+  struct // 第一种访问方式：按照AD5761的数据类型
+  {
+    unsigned AD5761DAT : 16;
+    unsigned AD5761CMD : 4;
+    unsigned AD5761FIX : 4;
+  };
+
+  struct // 第二种访问方式，按照SPI的传输方式（3个Byte）
+  {
+    unsigned DAT0 :8;
+    unsigned DAT1 :8;
+    unsigned DAT2 :8;
+  };
+} adx, ady;
+
+void pwm_init() {
+  // 先初始化定时器，然后初始化使用定时器的三路PWM
+  T2CONbits.ON = 0;
+  T2CONbits.TCKPS = 0; // 不对timer2分频
+  TMR2 = 0;
+  PR2 = 5000-1; // 工作周期为5000个外设周期，约为1／20MHz
+  T2CONbits.ON = 1;
+
+  // 设定3路PWM信号使用的端口
+  pinMode(PIN_OC1, OUTPUT);
+  pinMode(PIN_OC2, OUTPUT);
+  pinMode(PIN_OC3, OUTPUT);
+
+  // 将OC1－OC3绑定到9、10、11号端口
+  mapPps(PIN_OC1, PPS_OUT_OC1); // PIN 9 bind to OC1
+  mapPps(PIN_OC2, PPS_OUT_OC2); // PIN10 bind to OC2
+  mapPps(PIN_OC3, PPS_OUT_OC3); // PIN11 bind to OC3
+
+  // 设定PWM输出的初始值，检验白色激光输出
+  OC1R = 5000/10;
+  OC1RS = 5000/10;
+  OC1CONbits.OCTSEL = 0;
+  OC1CONbits.OCM = 0b110;
+  OC1CONbits.ON = 1; 
+
+  OC2R = 5000/10;
+  OC2RS = 5000/10;
+  OC2CONbits.OCTSEL = 0;
+  OC2CONbits.OCM = 0b110;
+  OC2CONbits.ON = 1; 
+
+  OC3R = 5000/10;
+  OC3RS = 5000/10;
+  OC3CONbits.OCTSEL = 0;
+  OC3CONbits.OCM = 0b110;
+  OC3CONbits.ON = 1; 
+}
+
+void set_color(char fv_red, char fv_grn, char fv_blu)
+{
+  OC1R = PR2/255*fv_red;
+  OC1RS = PR2/255*fv_red;
+  
+  OC2R = PR2/255*fv_grn;
+  OC2RS = PR2/255*fv_grn;
+
+  OC3R = PR2/255*fv_blu;
+  OC3RS = PR2/255*fv_blu;
+}
+
+void spi_subop_wr(unsigned char fv_data)
+{
+  if (SPI1STATbits.SPITBE)
+  {
+    SPI1BUF = fv_data;
+  }
+
+  while (SPI1STATbits.SPIBUSY) ;
+  fv_data = SPI1BUF;
+}
+
+void write_position(int fv_x, int fv_y)
+{
+  adx.AD5761CMD = 0001;
+  adx.AD5761DAT = fv_x;
+
+  ady.AD5761CMD = 0001;
+  ady.AD5761DAT = fv_y;
+
+  digitalWrite(PIN_SPI_CS, LOW);
+  spi_subop_wr(adx.DAT2);
+  spi_subop_wr(adx.DAT1);
+  spi_subop_wr(adx.DAT0);
+
+  spi_subop_wr(ady.DAT2);
+  spi_subop_wr(ady.DAT1);
+  spi_subop_wr(ady.DAT0);
+  digitalWrite(PIN_SPI_CS, HIGH);
+}
+
+void adc_init()
+{
+  pinMode(PIN_AD_RST, OUTPUT); // AD_RST line be output direction
+  digitalWrite(PIN_AD_RST, LOW); // Resetting the ADC Chips
+
+  pinMode(PIN_SPI_CS, OUTPUT); // SPI_CS line be output direction
+  digitalWrite(PIN_SPI_CS, HIGH); // disable ADC Chips
+
+  pinMode(PIN_SPI_SCK, OUTPUT); // SPI_SCK line be output direction
+  digitalWrite(PIN_SPI_SCK, LOW); 
+
+  pinMode(PIN_SPI_SDO, OUTPUT);
+  mapPps(PIN_SPI_SDO, PPS_OUT_SDO1);
+
+  pinMode(PIN_SPI_SDI, INPUT);
+  mapPps(PIN_SPI_SDI, PPS_IN_SDI1);
+
+  // ADC的数据初始化
+  adx.AD5761FIX = 0;
+  ady.AD5761FIX = 0;
+
+  // SPI初始化
+  SPI1CON= 0;
+  SPI1CONbits.SMP= 1;
+  SPI1CONbits.MSTEN = 1;
+
+  SPI1BRG = 10-1;
+  SPI1CONbits.ON = 1;
+
+  // 开启菊花链功能
+  adx.AD5761CMD = 0b1001;
+  ady.AD5761CMD = 0b1001;
+  adx.AD5761DAT = 0;
+  ady.AD5761DAT = 0;
+
+  delay(10);
+  digitalWrite(PIN_AD_RST, HIGH);
+  delay(1);
+  digitalWrite(PIN_SPI_CS, LOW);
+  spi_subop_wr(adx.DAT2);
+  spi_subop_wr(adx.DAT1);
+  spi_subop_wr(adx.DAT0);
+  digitalWrite(PIN_SPI_CS, HIGH);
+  delay(1);
+  digitalWrite(PIN_SPI_CS, LOW);
+  spi_subop_wr(adx.DAT2);
+  spi_subop_wr(adx.DAT1);
+  spi_subop_wr(adx.DAT0);
+  spi_subop_wr(ady.DAT2);
+  spi_subop_wr(ady.DAT1);
+  spi_subop_wr(ady.DAT0);
+  digitalWrite(PIN_SPI_CS, HIGH);
+
+  // 写入ADC初始状态
+  adx.AD5761CMD = 0b0100;
+  ady.AD5761CMD = 0b0100;
+  adx.AD5761DAT = 0b0000000011100010;
+  ady.AD5761DAT = 0b0000000011100010;
+  digitalWrite(PIN_SPI_CS, LOW);
+  spi_subop_wr(adx.DAT2);
+  spi_subop_wr(adx.DAT1);
+  spi_subop_wr(adx.DAT0);
+  spi_subop_wr(ady.DAT2);
+  spi_subop_wr(ady.DAT1);
+  spi_subop_wr(ady.DAT0);
+  digitalWrite(PIN_SPI_CS, HIGH);
+}
+//----------------新增部分----------------
+
+void t3_init(){
+  T3CONbits.ON = 0;
+  T3CONbits.TCKPS = 0;
+  TMR3 = 0;
+  PR3 = 5000-1;
+  T3CONbits.ON = 1;
+}
+
+int cur_i = 0;
+int rec_len = {0};
+byte data[] = {1};
+
+
+//显示下一个点
+void write_next(){
+  if(cur_i >= rec_len){
+    cur_i = 0;
+  }
+  cur_x = ((int)data[cur_i]) * 255 + ((int)data[cur_i + 1]) - 32512;
+  cur_y = ((int)data[cur_i + 2]) * 255 + ((int)data[cur_i + 3]) - 32512;
+  cur_int = (int)data[cur_i + 4];
+  set_color(0, cur_int, cur_int / 2);
+  write_position(cur_x, cur_y);
+  cur_i += 5;
+}
+
+void setup() {
+  Serial.begin(115200);
+  pinMode(PIN_LED4, OUTPUT);
+  digitalWrite(PIN_LED4, LOW);
+
+  pinMode(PIN_SW2, INPUT);
+  pinMode(PIN_SW3, INPUT);
+  adc_init();
+  pwm_init();
+  t3_init();
+
+  delay(10); // delay 10ms
+  digitalWrite(PIN_AD_RST, HIGH); // release AD_RST line
+
+  cur_x = 0;
+  cur_y = 0;
+}
+
+void loop() {
+  write_next();
+}
+
+//------
+void wait(){
+  while (!IFS0bits.T3IF) ;
+  IFS0bits.T3IF = 0;
+  TMR3 = 0;
+}
+
+int clamp(int v, int l, int r){
+  if(v < l) return l;
+  if(v > r) return r;
+  return v;
+}

@@ -14,6 +14,7 @@ public class SerialUtil : MonoBehaviour
 
     [Space]
     public Vector2 posToSend;
+    public int scale = 40;
 
     public List<LaserNode> dataToSend;
     bool waiting = false;
@@ -39,7 +40,7 @@ public class SerialUtil : MonoBehaviour
         foreach (var node in dataToSend)
         {
             count++;
-            byte[] bts = Node2Bytes(node);
+            byte[] bts = node.ToBytes(scale);
             foreach(var bt in bts)
             {
                 bytes.Add(bt);
@@ -72,7 +73,7 @@ public class SerialUtil : MonoBehaviour
         List<byte> bytes = new List<byte>();
         foreach (var node in dataToSend)
         {
-            byte[] bts = Node2Bytes(node);
+            byte[] bts = node.ToBytes(scale);
             foreach (var bt in bts)
             {
                 count++;
@@ -123,7 +124,7 @@ public class SerialUtil : MonoBehaviour
         List<byte> bytes = new List<byte>();
         foreach (var node in dataToSend)
         {
-            byte[] bts = Node2Bytes(node);
+            byte[] bts = node.ToBytes(scale);
             foreach (var bt in bts)
             {
                 count++;
@@ -187,26 +188,6 @@ public class SerialUtil : MonoBehaviour
         //waiting = true;
     }
 
-    float scale = 40;
-    //0-65024, 0->32512
-    byte[] Node2Bytes(LaserNode node)
-    {
-        byte[] res = new byte[5];
-        int xi = Mathf.RoundToInt(node.pos.x * scale) + 32512;
-        if (xi > 65024) xi = 65024;
-        if (xi < 0) xi = 0;
-        int yi = Mathf.RoundToInt(-node.pos.y * scale) + 32512;
-        if (yi > 65024) yi = 65024;
-        if (yi < 0) yi = 0;
-        int intensityi = Mathf.RoundToInt(node.intensity * 254);
-        res[0] = (byte)(xi / 255);
-        res[1] = (byte)(xi % 255);
-        res[2] = (byte)(yi / 255);
-        res[3] = (byte)(yi % 255);
-        res[4] = (byte)intensityi;
-        return res;
-    }
-
     void Awake()
     {
         instance = this;
@@ -268,7 +249,7 @@ public class SerialUtil : MonoBehaviour
     }
     private void SendSingle()
     {
-        byte[] bts = Node2Bytes(new LaserNode(posToSend, 1, 1));
+        byte[] bts = new LaserNode(posToSend, 1, 1).ToBytes(scale);
         port.Write(bts, 0, bts.Length);
     }
     private void SendTest()
