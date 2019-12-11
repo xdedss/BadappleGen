@@ -207,8 +207,8 @@ public static class EdgeDetect
 
     static void FindTurningPoints()
     {
-        int totalSample = 0;
-        int brightSample = 0;
+        float totalSample = 0;
+        float brightSample = 0;
         turningPoints.Clear();
         turningPointsTable = new TurningPoint[image.width, image.height];
         //从画面四个边缘找
@@ -284,8 +284,8 @@ public static class EdgeDetect
                 prevPoint = curPoint;
             }
         }
-        brightness = ((float)brightSample) / totalSample;
-        Debug.Log(brightness);
+        brightness = brightSample / totalSample;
+        //Debug.Log(brightness);
     }
 
     static bool InBound(int x, int y)
