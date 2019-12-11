@@ -50,13 +50,20 @@ public static class LaserPath
 public class LaserNode
 {
     public Vector2 pos;
-    public float intensity;
+    //public float intensity;
+    public Color color;
     public float deltaTime;
 
     public LaserNode(Vector2 pos, float intensity, float deltaTime)
     {
         this.pos = pos;
-        this.intensity = intensity;
+        this.color = new Color(intensity, intensity, intensity);
+        this.deltaTime = deltaTime;
+    }
+    public LaserNode(Vector2 pos, Color color, float deltaTime)
+    {
+        this.pos = pos;
+        this.color = color;
         this.deltaTime = deltaTime;
     }
 
