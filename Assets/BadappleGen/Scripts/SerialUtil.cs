@@ -15,6 +15,7 @@ public class SerialUtil : MonoBehaviour
     [Space]
     public Vector2 posToSend;
     public int scale = 40;
+    public bool autoSend;
 
     public List<LaserNode> dataToSend;
     //bool waiting = false;
@@ -155,7 +156,10 @@ public class SerialUtil : MonoBehaviour
         {
             port.Write(new byte[] { 255 }, 0, 1);
         }
-        WriteDataSync();
+        if (autoSend)
+        {
+            WriteDataSync();
+        }
     }
 
     private void SendSingle()
