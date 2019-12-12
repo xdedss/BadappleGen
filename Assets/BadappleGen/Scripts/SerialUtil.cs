@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.IO.Ports;
 using System.Threading;
 using UnityEngine;
@@ -10,6 +11,7 @@ public class SerialUtil : MonoBehaviour
 
     public string portName;
     public SerialPort port;
+    bool portConnected = false;
     public TextMesh dbgText;
 
     [Space]
@@ -20,13 +22,29 @@ public class SerialUtil : MonoBehaviour
     public List<LaserNode> dataToSend;
     //bool waiting = false;
 
-    private void Init()
+    public void Init(string portName)
     {
-        port = new SerialPort("COM8", 115200);
+        port = new SerialPort(portName, 115200);
         port.RtsEnable = true;
-        port.Open();
-        Debug.Log(port);
     }
+
+    public bool TryConnect()
+    {
+        try
+        {
+            port.Open();
+        }
+        catch (IOException)
+        {
+            portConnected = false;
+            Debug.LogWarning("Connection failed @ " + port.PortName);
+            return false;
+        }
+        portConnected = true;
+        return true;
+    }
+
+
     int seg = 255;
     int maxSegCount = 4;
     int segWaitTime = 8;
@@ -127,14 +145,15 @@ public class SerialUtil : MonoBehaviour
 
     void Start()
     {
-        Init();
+        Init(portName);
+        TryConnect();
     }
 
     int count_sent = 0;
     void Update()
     {
         //Debug.Log("Bytes:" + port.BytesToRead);
-        if (port.BytesToRead != 0)
+        if (portConnected && port.BytesToRead != 0)
         {
             //count_rec++;
             byte response = (byte)port.ReadByte();
@@ -157,7 +176,7 @@ public class SerialUtil : MonoBehaviour
         {
             SendEnd();
         }
-        if (autoSend)
+        if (portConnected && autoSend)
         {
             WriteDataSync();
         }
