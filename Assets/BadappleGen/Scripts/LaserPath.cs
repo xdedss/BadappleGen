@@ -9,7 +9,7 @@ public static class LaserPath
     //贪心 把多个路径连成一个
     public static List<LaserNode> ConvertEdge(List<EdgeChain> chains)
     {
-        if (chains.Count == 0) return null;
+        if (chains == null || chains.Count == 0) return new List<LaserNode>();
         var laserNodes = new List<LaserNode>();
         var currentPos = chains[0].pos;
         while(chains.Count > 0)

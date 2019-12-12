@@ -26,8 +26,6 @@ public class Test : MonoBehaviour
     {
         //Debug.Log(frameIdx);
         RT2T2(rt, tex2d);
-        EdgeDetect.image = tex2d;
-        EdgeDetect.Process();
     }
 
     void Update()
@@ -36,21 +34,18 @@ public class Test : MonoBehaviour
         {
             RunTest();
         }
-        if(EdgeDetect.chains != null && EdgeDetect.chains.Count > chainIndex && chainIndex >= 0)
+        if(video && tex2d)
         {
-            //foreach (var chain in EdgeDetect.chains)
-            //{
-            //    DrawChain(chain);
-            //}
-            //Debug.Log(EdgeDetect.chains[chainIndex].IndexToLast);
+            EdgeDetect.image = tex2d;
+            EdgeDetect.Process();
 
             //var path = LaserPath.ConvertEdge(EdgeDetect.chains);
-            LaserPath.color = Color.HSVToRGB(Mathf.Clamp((EdgeDetect.brightness - 0.5f) * 2 + 1/3f, 1/6f, 1/2f), 1, 1);// Color.Lerp(Color.red, Color.cyan, EdgeDetect.brightness);
-            var path = LaserPath.ConvertEdge(new List<EdgeChain>(EdgeDetect.chains));
             //path = LaserPath.OptimizePath(path, 16);
-            DrawLaserPath(path);
-            SerialUtil.instance.dataToSend = path;
         }
+        LaserPath.color = Color.HSVToRGB(Mathf.Clamp((EdgeDetect.brightness - 0.5f) * 2 + 1 / 3f, 1 / 6f, 1 / 2f), 1, 1);
+        var path = LaserPath.ConvertEdge(new List<EdgeChain>(EdgeDetect.chains));
+        DrawLaserPath(path);
+        SerialUtil.instance.dataToSend = path;
     }
 
     void OnGUI()
@@ -99,8 +94,8 @@ public class Test : MonoBehaviour
         {
             mat.SetTexture("_MainTex", rt);
             pic.localScale = new Vector3(rt.width, rt.height, 1);
-            vp.Play();
             tex2d = new Texture2D(rt.width, rt.height);
+            vp.Play();
         }
         //Debug.Log(EdgeDetect.chains.Count);
 

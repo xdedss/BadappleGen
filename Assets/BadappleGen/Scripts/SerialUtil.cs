@@ -12,18 +12,19 @@ public class SerialUtil : MonoBehaviour
     public string portName;
     private SerialPort port;
     private bool portConnected = false;
-    public TextMesh dbgText;
-
     [Space]
     public Vector2 posToSend;
     public int scale = 40;
     public bool autoSend;
+    [Space]
+    public TextMesh dbgText;
 
     public List<LaserNode> dataToSend;
     //bool waiting = false;
 
     public void Init(string portName)
     {
+        if (port != null) port.Dispose();
         port = new SerialPort(portName, 115200);
         port.RtsEnable = true;
     }
@@ -45,14 +46,14 @@ public class SerialUtil : MonoBehaviour
     }
 
 
-    int seg = 255;
-    int maxSegCount = 4;
-    int segWaitTime = 8;
+    int seg = 255;//5的整数倍
+    int maxSegCount = 4;//最大分段
+    int segWaitTime = 8;//毫秒
 
     void SendDataSync()
     {
         byte response;
-        if (dataToSend == null) //空帧
+        if (dataToSend == null || dataToSend.Count == 0) //空帧
         {
             SendNode(new LaserNode(Vector2.zero, Color.black, 1));
             SendEnd();
