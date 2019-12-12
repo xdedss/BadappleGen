@@ -35,7 +35,8 @@ public class SerialUtil : MonoBehaviour
     {
         if (dataToSend == null)
         {
-            port.Write(new byte[] { 0, 0, 0, 0, 0, 255 }, 0, 6);
+            port.Write(new LaserNode(Vector2.zero, Color.black, 1).ToBytes(scale), 0, 5);
+            SendEnd();
             for (int ti = 0; ti < segWaitTime; ti++)
             {
                 if (port.BytesToRead != 0)
@@ -95,7 +96,7 @@ public class SerialUtil : MonoBehaviour
                 }
             }
         }
-        port.Write(new byte[] { 255 }, 0, 1);
+        SendEnd();
         Debug.LogWarning("SyncWrote" + btw.Length + "Bytes");
         for (int ti = 0; ti < segWaitTime; ti++)
         {
