@@ -10,8 +10,8 @@ public class SerialUtil : MonoBehaviour
     public static SerialUtil instance;
 
     public string portName;
-    public SerialPort port;
-    bool portConnected = false;
+    private SerialPort port;
+    private bool portConnected = false;
     public TextMesh dbgText;
 
     [Space]
@@ -48,26 +48,22 @@ public class SerialUtil : MonoBehaviour
     int seg = 255;
     int maxSegCount = 4;
     int segWaitTime = 8;
-    
-    void WriteDataSync()
+
+    void SendDataSync()
     {
-        if (dataToSend == null)
+        byte response;
+        if (dataToSend == null) //空帧
         {
-            port.Write(new LaserNode(Vector2.zero, Color.black, 1).ToBytes(scale), 0, 5);
+            SendNode(new LaserNode(Vector2.zero, Color.black, 1));
             SendEnd();
-            for (int ti = 0; ti < segWaitTime; ti++)
+            if (ReceiveByte(out response, segWaitTime) && response == 0xff)
             {
-                if (port.BytesToRead != 0)
-                {
-                    byte response = (byte)port.ReadByte();
-                    if (response == 0xff)
-                    {
-                        break;
-                    }
-                }
-                Thread.Sleep(1);
+                Debug.Log("Empty frame 0xff OK");
             }
-            Debug.LogWarning("Empty frame");
+            else
+            {
+                Debug.LogWarning("Empty frame failed");
+            }
             return;
         }
         int count = 0;
@@ -82,60 +78,69 @@ public class SerialUtil : MonoBehaviour
             }
             if (count >= seg * maxSegCount)
             {
-                Debug.LogWarning("break");
+                Debug.LogWarning("break: too many nodes");
                 break;
             }
         }
         byte[] btw = bytes.ToArray();
         int btlen;
+        Debug.Log("Bytes to write: " + btw.Length);
+        //分段发送
         for (int offset = 0; offset < btw.Length; offset += seg)
         {
             btlen = Mathf.Min(btw.Length - offset, seg);
             port.Write(btw, offset, btlen);
             if (offset + seg < btw.Length)
             {
-                for (int ti = 0; ti < segWaitTime; ti++)
+                if (ReceiveByte(out response, segWaitTime) && response == 0xfe)
                 {
-                    if (port.BytesToRead != 0)
-                    {
-                        byte response = (byte)port.ReadByte();
-                        if (response == 0xfe)
-                        {
-                            Debug.LogWarning("seg trans successful");
-                            break;
-                        }
-                    }
-                    //Debug.Log("sleep" + ti);
-                    Thread.Sleep(1);
-                    if(ti == segWaitTime - 1)
-                    {
-                        Debug.LogError("seg trans failed");
-                    }
+                    Debug.Log("seg response 0xfe OK");
+                }
+                else
+                {
+                    Debug.LogWarning("seg failed");
                 }
             }
         }
         SendEnd();
-        Debug.LogWarning("SyncWrote" + btw.Length + "Bytes");
-        for (int ti = 0; ti < segWaitTime; ti++)
+        if (ReceiveByte(out response, segWaitTime) && response == 0xff)
+        {
+            Debug.Log("response 0xff OK");
+        }
+        else
+        {
+            Debug.LogWarning("Sync failed");
+        }
+        count_sent++;
+        DebugText(count_sent.ToString());
+    }
+
+    public bool ReceiveByte(out byte b, int millisecTimeout)
+    {
+        for (int ti = 0; ti < millisecTimeout; ti++)
         {
             if (port.BytesToRead != 0)
             {
-                byte response = (byte)port.ReadByte();
-                if (response == 0xff)
-                {
-                    Debug.LogWarning("Sync response 255 OK");
-                    break;
-                }
+                b = (byte)port.ReadByte();
+                return true;
             }
             Thread.Sleep(1);
-            if (ti == segWaitTime - 1)
-            {
-                Debug.LogError("Sync failed");
-            }
         }
-        count_sent++;
-        dbgText.text = count_sent.ToString();
-        //waiting = true;
+        if (port.BytesToRead != 0)
+        {
+            b = (byte)port.ReadByte();
+            return true;
+        }
+        b = 0;
+        return false;
+    }
+
+    private void DebugText(string msg)
+    {
+        if (dbgText)
+        {
+            dbgText.text = msg;
+        }
     }
 
     void Awake()
@@ -152,51 +157,56 @@ public class SerialUtil : MonoBehaviour
     int count_sent = 0;
     void Update()
     {
-        //Debug.Log("Bytes:" + port.BytesToRead);
-        if (portConnected && port.BytesToRead != 0)
+        if (portConnected)
         {
-            //count_rec++;
-            byte response = (byte)port.ReadByte();
-            //if (response == 255)
-            //{
-            //    waiting = false;
-            //}
-            Debug.LogWarning("response:" + response);
-        }
+            if (port.BytesToRead != 0)
+            {
+                byte response = (byte)port.ReadByte();
+                Debug.LogWarning("response:" + response);
+            }
 
-        if (Input.GetKeyDown(KeyCode.S))
-        {
-            WriteDataSync();
-        }
-        if (Input.GetKeyDown(KeyCode.D))
-        {
-            SendSingle();
-        }
-        if (Input.GetKeyDown(KeyCode.E))
-        {
-            SendEnd();
-        }
-        if (portConnected && autoSend)
-        {
-            WriteDataSync();
+            if (Input.GetKeyDown(KeyCode.S))
+            {
+                SendDataSync();
+            }
+            if (Input.GetKeyDown(KeyCode.D))
+            {
+                SendNode(new LaserNode(posToSend, 1, 1));
+            }
+            if (Input.GetKeyDown(KeyCode.E))
+            {
+                SendEnd();
+            }
+            if (autoSend)
+            {
+                SendDataSync();
+            }
         }
     }
 
-    public void SendSingle()
+    public void SendNode(LaserNode node)
     {
-        byte[] bts = new LaserNode(posToSend, 1, 1).ToBytes(scale);
-        port.Write(bts, 0, bts.Length);
+        byte[] bts = node.ToBytes(scale);
+        SendBytes(bts);
+        Debug.LogWarning("sending node");
     }
     public void SendTest()
     {
         byte[] testData = new byte[] { 0x01, 0x00, 0x00, 0x00, 0xfe, 0x00, 0x00, 0x01, 0x00, 0xfe };
-        port.Write(testData, 0, testData.Length);
-        port.Write(new byte[] { 255 }, 0, 1);
-        //waiting = true;
-        Debug.LogWarning("sending");
+        SendBytes(testData);
+        SendEnd();
+        Debug.LogWarning("sending test");
     }
     public void SendEnd()
     {
-        port.Write(new byte[] { 255 }, 0, 1);
+        SendBytes(new byte[] { 255 });
+    }
+    public void SendBytes(byte[] bytes)
+    {
+        port.Write(bytes, 0, bytes.Length);
+    }
+    public void SendBytes(byte[] bytes, int offset, int count)
+    {
+        port.Write(bytes, offset, count);
     }
 }
