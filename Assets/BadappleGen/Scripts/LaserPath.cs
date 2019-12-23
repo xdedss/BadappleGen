@@ -2,6 +2,9 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+/// <summary>
+/// 用EdgeDetect处理完得到的路径链在这里调用ConvertEdge进行处理，返回一个单一的完整路径点（LaserNode）列表
+/// </summary>
 public static class LaserPath
 {
     public static Color color = Color.cyan;
@@ -48,12 +51,17 @@ public static class LaserPath
     
 }
 
-//单个光点
+/// <summary>
+/// 单个光点，包含位置和颜色信息
+/// </summary>
 public class LaserNode
 {
     public Vector2 pos;
     //public float intensity;
     public Color color;
+    /// <summary>
+    /// 暂时没用
+    /// </summary>
     public float deltaTime;
 
     public LaserNode(Vector2 pos, float intensity, float deltaTime)

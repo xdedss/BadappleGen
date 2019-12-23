@@ -4,6 +4,9 @@ using UnityEngine;
 using UnityEngine.Video;
 using System.IO;
 
+/// <summary>
+/// 测试用，勾选video后，按T开始连续处理vp中的视频帧，并赋值给SerialUtil
+/// </summary>
 public class Test : MonoBehaviour
 {
     public bool video = false;
@@ -42,7 +45,8 @@ public class Test : MonoBehaviour
             //var path = LaserPath.ConvertEdge(EdgeDetect.chains);
             //path = LaserPath.OptimizePath(path, 16);
         }
-        LaserPath.color = Color.HSVToRGB(Mathf.Clamp((EdgeDetect.brightness - 0.5f) * 2 + 1 / 3f, 1 / 6f, 1 / 2f), 1, 1);
+        //LaserPath.color = Color.HSVToRGB(Mathf.Clamp((EdgeDetect.brightness - 0.5f) * 2 + 1 / 3f, 1 / 6f, 1 / 2f), 1, 1);
+        LaserPath.color = EdgeDetect.brightness > 0.5f ? Color.cyan : Color.yellow;
         var path = LaserPath.ConvertEdge(new List<EdgeChain>(EdgeDetect.chains));
         DrawLaserPath(path);
         SerialUtil.instance.dataToSend = path;
@@ -101,16 +105,16 @@ public class Test : MonoBehaviour
 
     }
 
-    void DrawChain (EdgeChain chain)
-    {
-        if (chain.next)
-        {
-            Debug.DrawLine(chain.pos.V3(0), chain.next.pos.V3(0), Color.green);
-            DrawChain(chain.next);
-        }
-    }
+    //void DrawChain (EdgeChain chain)
+    //{
+    //    if (chain.next)
+    //    {
+    //        Debug.DrawLine(chain.pos.V3(0), chain.next.pos.V3(0), Color.green);
+    //        DrawChain(chain.next);
+    //    }
+    //}
 
-    void DrawLaserPath(List<LaserNode> path)
+    public static void DrawLaserPath(List<LaserNode> path)
     {
         LaserNode last = null;
         //bool flip = true;

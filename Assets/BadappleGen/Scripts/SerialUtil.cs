@@ -5,6 +5,10 @@ using System.IO.Ports;
 using System.Threading;
 using UnityEngine;
 
+/// <summary>
+/// 用于向单片机发送数据；
+/// 设定好portName，设autoSend为true，调用Init()初始化后，再把要发的路径赋值给dataToSend即可
+/// </summary>
 public class SerialUtil : MonoBehaviour
 {
     public static SerialUtil instance;
@@ -33,12 +37,14 @@ public class SerialUtil : MonoBehaviour
     {
         try
         {
+            GlobalRuntimeControl.SetDebugText("Connected");
             port.Open();
         }
         catch (IOException)
         {
             portConnected = false;
             Debug.LogWarning("Connection failed @ " + port.PortName);
+            GlobalRuntimeControl.SetDebugText("Connection failed @ " + port.PortName);
             return false;
         }
         portConnected = true;
@@ -47,7 +53,7 @@ public class SerialUtil : MonoBehaviour
 
 
     int seg = 255;//5的整数倍
-    int maxSegCount = 4;//最大分段
+    int maxSegCount = 8;//最大分段
     int segWaitTime = 8;//毫秒
 
     void SendDataSync()
@@ -151,8 +157,8 @@ public class SerialUtil : MonoBehaviour
 
     void Start()
     {
-        Init(portName);
-        TryConnect();
+        //Init(portName);
+        //TryConnect();
     }
 
     int count_sent = 0;

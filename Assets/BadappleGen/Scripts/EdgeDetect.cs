@@ -2,6 +2,10 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+/// <summary>
+/// 用于自动生成单帧黑白图像的路径。
+/// 将要处理的图片赋值给image，调用Process()，处理完后的路径会存到chains字段，平均亮度会存到brightness字段
+/// </summary>
 public static class EdgeDetect
 {
 
