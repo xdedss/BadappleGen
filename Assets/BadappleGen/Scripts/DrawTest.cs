@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.EventSystems;
 
 /// <summary>
 /// 屏幕上画线，给SerialUtil
@@ -25,7 +26,7 @@ public class DrawTest : MonoBehaviour
     {
         Vector2 mouse = Input.mousePosition;
         currentData[currentData.Count - 1].pos = mouse;
-        if (Input.GetMouseButton(0))
+        if (Input.GetMouseButton(0) && !EventSystem.current.IsPointerOverGameObject())
         {
             var mag = (lastPoint - mouse).magnitude;
             if(mag > lineMag)
@@ -33,13 +34,13 @@ public class DrawTest : MonoBehaviour
                 NewNode(new LaserNode(mouse, col, 1));
             }
         }
-        if (Input.GetMouseButtonUp(0))
+        if (Input.GetMouseButtonUp(0) && !EventSystem.current.IsPointerOverGameObject())
         {
             NewNode(new LaserNode(mouse, Color.black, 1));
             NewNode(new LaserNode(mouse, Color.black, 1));
             NewNode(new LaserNode(mouse, col, 1));
         }
-        if (Input.GetMouseButtonDown(0))
+        if (Input.GetMouseButtonDown(0) && !EventSystem.current.IsPointerOverGameObject())
         {
             //NewNode(new LaserNode(mouse, Color.black, 1));
             currentData[currentData.Count - 1] = new LaserNode(mouse, Color.black, 1);
